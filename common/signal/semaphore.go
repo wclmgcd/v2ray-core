@@ -1,23 +1,27 @@
 package signal
 
+// Semaphore is an implementation of semaphore.
 type Semaphore struct {
-	token chan bool
+	token chan struct{}
 }
 
+// NewSemaphore create a new Semaphore with n permits.
 func NewSemaphore(n int) *Semaphore {
 	s := &Semaphore{
-		token: make(chan bool, n),
+		token: make(chan struct{}, n),
 	}
 	for i := 0; i < n; i++ {
-		s.token <- true
+		s.token <- struct{}{}
 	}
 	return s
 }
 
-func (s *Semaphore) Wait() <-chan bool {
+// Wait returns a channel for acquiring a permit.
+func (s *Semaphore) Wait() <-chan struct{} {
 	return s.token
 }
 
+// Signal releases a permit into the Semaphore.
 func (s *Semaphore) Signal() {
-	s.token <- true
+	s.token <- struct{}{}
 }

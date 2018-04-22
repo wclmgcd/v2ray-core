@@ -14,15 +14,20 @@ import (
 	"v2ray.com/core/proxy/dokodemo"
 	"v2ray.com/core/proxy/vmess"
 	"v2ray.com/core/proxy/vmess/outbound"
-	"v2ray.com/core/testing/assert"
+	. "v2ray.com/ext/assert"
 )
 
 func TestV2RayClose(t *testing.T) {
-	assert := assert.On(t)
+	assert := With(t)
 
 	port := net.Port(dice.RollUint16())
+	userId := uuid.New()
 	config := &Config{
-		Inbound: []*proxyman.InboundHandlerConfig{
+		App: []*serial.TypedMessage{
+			serial.ToTypedMessage(&proxyman.InboundConfig{}),
+			serial.ToTypedMessage(&proxyman.OutboundConfig{}),
+		},
+		Inbound: []*InboundHandlerConfig{
 			{
 				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
 					PortRange: net.SinglePortRange(port),
@@ -37,7 +42,7 @@ func TestV2RayClose(t *testing.T) {
 				}),
 			},
 		},
-		Outbound: []*proxyman.OutboundHandlerConfig{
+		Outbound: []*OutboundHandlerConfig{
 			{
 				ProxySettings: serial.ToTypedMessage(&outbound.Config{
 					Receiver: []*protocol.ServerEndpoint{
@@ -47,7 +52,7 @@ func TestV2RayClose(t *testing.T) {
 							User: []*protocol.User{
 								{
 									Account: serial.ToTypedMessage(&vmess.Account{
-										Id: uuid.New().String(),
+										Id: userId.String(),
 									}),
 								},
 							},
@@ -59,7 +64,7 @@ func TestV2RayClose(t *testing.T) {
 	}
 
 	server, err := New(config)
-	assert.Error(err).IsNil()
+	assert(err, IsNil)
 
 	server.Close()
 }

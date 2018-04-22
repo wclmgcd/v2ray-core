@@ -10,9 +10,9 @@ import (
 type Server struct {
 	Port         net.Port
 	MsgProcessor func(msg []byte) []byte
+	ShouldClose  bool
 	SendFirst    []byte
 	Listen       net.Address
-	accepting    bool
 	listener     *net.TCPListener
 }
 
@@ -37,12 +37,11 @@ func (server *Server) Start() (net.Destination, error) {
 }
 
 func (server *Server) acceptConnections(listener *net.TCPListener) {
-	server.accepting = true
-	for server.accepting {
+	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Printf("Failed accept TCP connection: %v\n", err)
-			continue
+			return
 		}
 
 		go server.handleConnection(conn)
@@ -67,11 +66,13 @@ func (server *Server) handleConnection(conn net.Conn) {
 			fmt.Println("Failed to write response:", err)
 			break
 		}
+		if server.ShouldClose {
+			break
+		}
 	}
 	conn.Close()
 }
 
-func (v *Server) Close() {
-	v.accepting = false
-	v.listener.Close()
+func (server *Server) Close() error {
+	return server.listener.Close()
 }
